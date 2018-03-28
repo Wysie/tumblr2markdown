@@ -8,7 +8,7 @@ import os
 import codecs
 import argparse
 import hashlib # for image URL->path hashing
-import urllib2 # for image downloading
+import requests # for image downloading
 import html2text # to convert body HTML to Markdown
 from bs4 import BeautifulSoup
 
@@ -69,7 +69,7 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 		if os.path.exists(concreteImagePath):
 			# This image was already downloaded, so just replace the URL in body
 			postBody = postBody.replace(concreteImageUrl, imageOutputUrlPath)
-			print "Found image url", concreteImageUrl, "already downloaded to path", concreteImagePath
+			print ("Found image url", concreteImageUrl, "already downloaded to path", concreteImagePath)
 		else:
 			# Download the image and then replace the URL in body
 			imageContent = urllib2.urlopen(concreteImageUrl).read()
@@ -78,7 +78,7 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 			f.close()
 
 			postBody = postBody.replace(concreteImageUrl, imageOutputUrlPath)
-			print "Downloaded image url", concreteImageUrl, "to path", concreteImagePath
+			print ("Downloaded image url", concreteImageUrl, "to path", concreteImagePath)
 
 	return postBody
 
@@ -150,9 +150,9 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 		posts = response['posts']
 		processed += len(posts)
 
-		print "Processing..."
+		print ("Processing...")
 		for post in posts:
-			print "	http://" + host + "/post/" + str(post["id"])
+			print ("	http://" + host + "/post/" + str(post["id"]))
 
 			if 'reblogged_from_id' in post and keepReblog is False:
 				continue
@@ -199,7 +199,7 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 				else:
 					title = "(unknown post type)"
 					body = "missing body"
-					print post
+					print (post)
 
 			# Generate a slug out of the title: replace weird characters …
 			slug = re.sub('[^0-9a-zA-Z- ]', '', title.lower().strip())
@@ -246,10 +246,10 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 
 			converted += 1
 
-		print "Processed", processed, "out of", total_posts, "posts"
-		print "Converted", converted, "out of", total_posts, "posts"
+		print ("Processed", processed, "out of", total_posts, "posts")
+		print ("Converted", converted, "out of", total_posts, "posts")
 
-	print "Posts per type:", posts_per_type
+	print ("Posts per type:", posts_per_type)
 
 def findFileName(path, slug):
 	"""Make sure the file doesn't already exist"""
@@ -258,7 +258,7 @@ def findFileName(path, slug):
 		if not os.path.exists(file_name):
 			return file_name
 
-	print "ERROR: Too many clashes trying to create filename " +  makeFileName(path, slug)
+	print ("ERROR: Too many clashes trying to create filename " +  makeFileName(path, slug))
 	exit()
 
 def makeFileName(path, slug, exists = 0):
@@ -285,11 +285,11 @@ def main():
 	args = parser.parse_args()
 
 	if not args.apiKey:
-		print "Tumblr API key is required."
+		print ("Tumblr API key is required.")
 		exit(0)
 
 	if not args.host:
-		print "Tumblr host name is required."
+		print ("Tumblr host name is required.")
 		exit(0)
 
 	downloader(args.apiKey, args.host, args.postsPath, args.downloadImages, args.imagesPath, args.imagesUrlPath, args.noImagesFolders, args.drafts, args.replaceLinks, args.allPostTypes, args.keepReblog)
