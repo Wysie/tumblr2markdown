@@ -71,5 +71,7 @@ Just run it with -h switch.
 	This app downloads all your Tumblr content into Markdown files that are
 	suitable for processing with Hugo. Optionally also downloads the images hosted
 	on Tumblr and replaces their URLs with locally hosted versions.
+	
+	An example request would be: tumblr2hugomarkdown.py --apikey xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx --host xxxxxxxxx.tumblr.com
 
 You will need a Tumblr API key, which you can get by [registering a Tumblr application.](http://www.tumblr.com/oauth/apps) Get the value called called “OAuth Consumer Key”.
