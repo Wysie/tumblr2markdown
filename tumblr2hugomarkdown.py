@@ -82,6 +82,21 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 
 	return postBody
 
+def getSlug(date, tytle):
+	# Generate a slug out of the title: replace weird characters …
+	slug = re.sub('[^0-9a-zA-Z- ]', '', tytle.lower().strip())
+
+	# … collapse spaces …
+	slug = re.sub(' +', ' ', slug)
+
+	# … convert spaces to - …
+	slug = slug.replace(' ', '-')
+
+	# … and prepend date
+	slug = date.strftime("%Y-%m-%d-") + slug
+
+	return slug
+
 def mapUrlsToFiles(apiKey, host):
 	# Authenticate via API Key
 	client = pytumblr.TumblrRestClient(apiKey)
