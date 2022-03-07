@@ -176,7 +176,15 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 			else:
 				if post["type"] == "photo":
 					title = "Photo post"
-					body = "[image](" + post["photos"][0]["original_size"]["url"] + ")\n\n" + markdown_maker.handle(post["caption"])
+					photoLocs = "";
+					# loop added to include all photos from post
+					for i in range(len(post["photos"])):
+						photoURL = post["photos"][i]["original_size"]["url"]
+						# WIP: Adding references to local files in /static/img/
+						# photoURL = photoURL.replace('https://64.media.tumblr.com', '')
+						# photoLocs += "![](/img/" + getSlug(postDate, title) + photoURL + ")\n"
+						photoLocs += "![](" + photoURL + ")\n"
+					body = photoLocs + markdown_maker.handle(post["caption"])
 				elif post["type"] == "video":
 					title = "Video post"
 					known_width = 0
