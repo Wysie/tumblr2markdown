@@ -211,24 +211,12 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 					body = "missing body"
 					print (post)
 
-			# Generate a slug out of the title: replace weird characters …
-			slug = re.sub('[^0-9a-zA-Z- ]', '', title.lower().strip())
-
-			# … collapse spaces …
-			slug = re.sub(' +', ' ', slug)
-
-			# … convert spaces to tabs …
-			slug = slug.replace(' ', '-')
-
-			# … and prepend date
-			slug = postDate.strftime("%Y-%m-%d-") + slug
-
 			# Download images if requested
 			if downloadImages:
 				if (noImagesFolders):
 					body = processPostBodyForImages(body, imagesPath, imagesUrlPath)
 				else:
-					body = processPostBodyForImages(body, imagesPath + "/" + slug, imagesUrlPath + "/" + slug)
+					body = processPostBodyForImages(body, imagesPath + "/" + getSlug(postDate, title), imagesUrlPath + "/" + getSlug(postDate, title))
 
 			if replaceLinks:
 				for key, value in url_mapping.iteritems():
