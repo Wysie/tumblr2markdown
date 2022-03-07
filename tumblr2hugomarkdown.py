@@ -119,22 +119,9 @@ def mapUrlsToFiles(apiKey, host):
 			else:
 				continue
 
-			# Generate a slug out of the title: replace weird characters …
-			slug = re.sub('[^0-9a-zA-Z- ]', '', title.lower().strip())
-
-			# … collapse spaces …
-			slug = re.sub(' +', ' ', slug)
-
-			# … convert spaces to tabs …
-			slug = slug.replace(' ', '-')
-
-			# … and prepend date
-			slug = postDate.strftime("%Y-%m-%d-") + slug
-
-			url_mapping[post["post_url"]] = "{{< relref \"" + slug + ".md\" >}}"
+			url_mapping[post["post_url"]] = "{{< relref \"" + getSlug(postDate, title) + ".md\" >}}"
 
 	return url_mapping
-
 
 def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPath, noImagesFolders, drafts, replaceLinks, allPostTypes, keepReblog):
 	# Authenticate via API Key
