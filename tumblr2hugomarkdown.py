@@ -56,7 +56,7 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 
 		concreteImageUrl = imageMatch.group(0)
 		concreteImageExtension = imageMatch.group(1)
-		imageHash = hashlib.sha256(concreteImageUrl).hexdigest()
+		imageHash = hashlib.sha256(concreteImageUrl.encode()).hexdigest()
 
 		# Create the image folder if it does not exist
 		if not os.path.exists(imagesPath):
