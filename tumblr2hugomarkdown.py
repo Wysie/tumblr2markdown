@@ -228,17 +228,18 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 			if not os.path.exists(postsPath):
 				os.makedirs(postsPath)
 
-			f = codecs.open(findFileName(postsPath, slug), encoding='utf-8', mode="w")
+			f = codecs.open(findFileName(postsPath, getSlug(postDate, title)), encoding='utf-8', mode="w")
 
 			tags = ""
 			if len(post["tags"]):
-				tags = "[" + '"{0}"'.format('", "'.join(post["tags"])) + "]"
+				tags = "\n - " + '{0}'.format('\n - '.join(post["tags"]))
+				tagTime = datetime.strptime(post["tags"][1], "%m/%d/%y")
 
 			draft = "false"
 			if drafts:
 				draft = "true"
 
-			f.write("+++\ndate = \"" + postDate.strftime('%Y-%m-%dT%H:%M:%S%z+00:00') + "\"\ndraft = " + draft + "\ntags = " + tags + "\ntitle = \"" + title.replace('"', '\\"') + "\"\n+++\n" + body)
+			f.write("---\ndate: '" + tagTime.strftime('%Y-%m-%d') + "'\ndraft: " + draft + "\ncategories:\n - photo" + "\ntags: " + tags + "\ntitle: '" + tagTime.strftime('%Y-%m-%d').replace('"', '\\"') + "'\nshowDate: yes" + "\n---\n\n" + body)
 
 			f.close()
 
