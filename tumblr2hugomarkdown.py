@@ -233,13 +233,13 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 			tags = ""
 			if len(post["tags"]):
 				tags = "\n - " + '{0}'.format('\n - '.join(post["tags"]))
-				tagTime = datetime.strptime(post["tags"][1], "%m/%d/%y")
+				#tagTime = datetime.strptime(post["tags"][1], "%m/%d/%y")
 
 			draft = "false"
 			if drafts:
 				draft = "true"
 
-			f.write("---\ndate: '" + tagTime.strftime('%Y-%m-%d') + "'\ndraft: " + draft + "\ncategories:\n - photo" + "\ntags: " + tags + "\ntitle: '" + tagTime.strftime('%Y-%m-%d').replace('"', '\\"') + "'\nshowDate: yes" + "\n---\n\n" + body)
+			f.write("---\ndate: '" + postDate.strftime('%Y-%m-%dT%H:%M:%S%z+00:00') + "'\ndraft: " + draft + "\ncategories:\n - photo" + "\ntags: " + tags + "\ntitle: '" + title.strftime('%Y-%m-%d').replace('"', '\\"') + "'\nshowDate: yes" + "\n---\n\n" + body)
 
 			f.close()
 
