@@ -3,4 +3,4 @@ html2text==2016.5.29
 httplib2==0.9.2
 httpretty==0.8.14
 oauth2==1.9.0.post1
-PyTumblr==0.0.6
+PyTumblr==git+https://github.com/tumblr/pytumblr.git@master

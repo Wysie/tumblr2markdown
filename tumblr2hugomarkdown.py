@@ -8,7 +8,7 @@ import os
 import codecs
 import argparse
 import hashlib # for image URL->path hashing
-import urllib2 # for image downloading
+import requests # for image downloading
 import html2text # to convert body HTML to Markdown
 from bs4 import BeautifulSoup
 
@@ -56,7 +56,7 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 
 		concreteImageUrl = imageMatch.group(0)
 		concreteImageExtension = imageMatch.group(1)
-		imageHash = hashlib.sha256(concreteImageUrl).hexdigest()
+		imageHash = hashlib.sha256(concreteImageUrl.encode()).hexdigest()
 
 		# Create the image folder if it does not exist
 		if not os.path.exists(imagesPath):
@@ -69,18 +69,33 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 		if os.path.exists(concreteImagePath):
 			# This image was already downloaded, so just replace the URL in body
 			postBody = postBody.replace(concreteImageUrl, imageOutputUrlPath)
-			print "Found image url", concreteImageUrl, "already downloaded to path", concreteImagePath
+			print ("Found image url", concreteImageUrl, "already downloaded to path", concreteImagePath)
 		else:
 			# Download the image and then replace the URL in body
-			imageContent = urllib2.urlopen(concreteImageUrl).read()
+			imageContent = requests.get(concreteImageUrl).content
 			f = open(concreteImagePath, 'wb')
 			f.write(imageContent)
 			f.close()
 
 			postBody = postBody.replace(concreteImageUrl, imageOutputUrlPath)
-			print "Downloaded image url", concreteImageUrl, "to path", concreteImagePath
+			print ("Downloaded image url", concreteImageUrl, "to path", concreteImagePath)
 
 	return postBody
+
+def getSlug(date, tytle):
+	# Generate a slug out of the title: replace weird characters …
+	slug = re.sub('[^0-9a-zA-Z- ]', '', tytle.lower().strip())
+
+	# … collapse spaces …
+	slug = re.sub(' +', ' ', slug)
+
+	# … convert spaces to - …
+	slug = slug.replace(' ', '-')
+
+	# … and prepend date
+	slug = date.strftime("%Y-%m-%d-") + slug
+
+	return slug
 
 def mapUrlsToFiles(apiKey, host):
 	# Authenticate via API Key
@@ -104,22 +119,9 @@ def mapUrlsToFiles(apiKey, host):
 			else:
 				continue
 
-			# Generate a slug out of the title: replace weird characters …
-			slug = re.sub('[^0-9a-zA-Z- ]', '', title.lower().strip())
-
-			# … collapse spaces …
-			slug = re.sub(' +', ' ', slug)
-
-			# … convert spaces to tabs …
-			slug = slug.replace(' ', '-')
-
-			# … and prepend date
-			slug = postDate.strftime("%Y-%m-%d-") + slug
-
-			url_mapping[post["post_url"]] = "{{< relref \"" + slug + ".md\" >}}"
+			url_mapping[post["post_url"]] = "{{< relref \"" + getSlug(postDate, title) + ".md\" >}}"
 
 	return url_mapping
-
 
 def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPath, noImagesFolders, drafts, replaceLinks, allPostTypes, keepReblog):
 	# Authenticate via API Key
@@ -150,9 +152,9 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 		posts = response['posts']
 		processed += len(posts)
 
-		print "Processing..."
+		print ("Processing...")
 		for post in posts:
-			print "	http://" + host + "/post/" + str(post["id"])
+			print ("	http://" + host + "/post/" + str(post["id"]))
 
 			if 'reblogged_from_id' in post and keepReblog is False:
 				continue
@@ -174,7 +176,15 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 			else:
 				if post["type"] == "photo":
 					title = "Photo post"
-					body = "[image](" + post["photos"][0]["original_size"]["url"] + ")\n\n" + markdown_maker.handle(post["caption"])
+					photoLocs = "";
+					# loop added to include all photos from post
+					for i in range(len(post["photos"])):
+						photoURL = post["photos"][i]["original_size"]["url"]
+						# WIP: Adding references to local files in /static/img/
+						# photoURL = photoURL.replace('https://64.media.tumblr.com', '')
+						# photoLocs += "![](/img/" + getSlug(postDate, title) + photoURL + ")\n"
+						photoLocs += "![](" + photoURL + ")\n"
+					body = photoLocs + markdown_maker.handle(post["caption"])
 				elif post["type"] == "video":
 					title = "Video post"
 					known_width = 0
@@ -199,26 +209,14 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 				else:
 					title = "(unknown post type)"
 					body = "missing body"
-					print post
-
-			# Generate a slug out of the title: replace weird characters …
-			slug = re.sub('[^0-9a-zA-Z- ]', '', title.lower().strip())
-
-			# … collapse spaces …
-			slug = re.sub(' +', ' ', slug)
-
-			# … convert spaces to tabs …
-			slug = slug.replace(' ', '-')
-
-			# … and prepend date
-			slug = postDate.strftime("%Y-%m-%d-") + slug
+					print (post)
 
 			# Download images if requested
 			if downloadImages:
 				if (noImagesFolders):
 					body = processPostBodyForImages(body, imagesPath, imagesUrlPath)
 				else:
-					body = processPostBodyForImages(body, imagesPath + "/" + slug, imagesUrlPath + "/" + slug)
+					body = processPostBodyForImages(body, imagesPath + "/" + getSlug(postDate, title), imagesUrlPath + "/" + getSlug(postDate, title))
 
 			if replaceLinks:
 				for key, value in url_mapping.iteritems():
@@ -230,26 +228,27 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 			if not os.path.exists(postsPath):
 				os.makedirs(postsPath)
 
-			f = codecs.open(findFileName(postsPath, slug), encoding='utf-8', mode="w")
+			f = codecs.open(findFileName(postsPath, getSlug(postDate, title)), encoding='utf-8', mode="w")
 
 			tags = ""
 			if len(post["tags"]):
-				tags = "[" + '"{0}"'.format('", "'.join(post["tags"])) + "]"
+				tags = "\n - " + '{0}'.format('\n - '.join(post["tags"]))
+				#tagTime = datetime.strptime(post["tags"][1], "%m/%d/%y")
 
 			draft = "false"
 			if drafts:
 				draft = "true"
 
-			f.write("+++\ndate = \"" + postDate.strftime('%Y-%m-%dT%H:%M:%S%z+00:00') + "\"\ndraft = " + draft + "\ntags = " + tags + "\ntitle = \"" + title.replace('"', '\\"') + "\"\n+++\n" + body)
+			f.write("---\ndate: '" + postDate.strftime('%Y-%m-%dT%H:%M:%S%z+00:00') + "'\ndraft: " + draft + "\ncategories:\n - photo" + "\ntags: " + tags + "\ntitle: '" + title.strftime('%Y-%m-%d').replace('"', '\\"') + "'\nshowDate: yes" + "\n---\n\n" + body)
 
 			f.close()
 
 			converted += 1
 
-		print "Processed", processed, "out of", total_posts, "posts"
-		print "Converted", converted, "out of", total_posts, "posts"
+		print ("Processed", processed, "out of", total_posts, "posts")
+		print ("Converted", converted, "out of", total_posts, "posts")
 
-	print "Posts per type:", posts_per_type
+	print ("Posts per type:", posts_per_type)
 
 def findFileName(path, slug):
 	"""Make sure the file doesn't already exist"""
@@ -258,7 +257,7 @@ def findFileName(path, slug):
 		if not os.path.exists(file_name):
 			return file_name
 
-	print "ERROR: Too many clashes trying to create filename " +  makeFileName(path, slug)
+	print ("ERROR: Too many clashes trying to create filename " +  makeFileName(path, slug))
 	exit()
 
 def makeFileName(path, slug, exists = 0):
@@ -285,11 +284,11 @@ def main():
 	args = parser.parse_args()
 
 	if not args.apiKey:
-		print "Tumblr API key is required."
+		print ("Tumblr API key is required.")
 		exit(0)
 
 	if not args.host:
-		print "Tumblr host name is required."
+		print ("Tumblr host name is required.")
 		exit(0)
 
 	downloader(args.apiKey, args.host, args.postsPath, args.downloadImages, args.imagesPath, args.imagesUrlPath, args.noImagesFolders, args.drafts, args.replaceLinks, args.allPostTypes, args.keepReblog)
